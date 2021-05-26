@@ -1,0 +1,18 @@
+syntax = 'proto3';
+
+option go_package = 'github.com/niakr1s/shtrafovnet/services/companyInfoGetter';
+
+service CompanyInfoGetter {
+    rpc GetCompanyInfo (GetCompanyInfoRequest) returns (GetCompanyInfoResponse) {}
+}
+
+message GetCompanyInfoRequest {
+    string inn = 1;
+}
+
+ message GetCompanyInfoResponse {
+     string inn = 1;
+     string kpp = 2;
+     string name = 3;
+     string chief = 4;
+ }
