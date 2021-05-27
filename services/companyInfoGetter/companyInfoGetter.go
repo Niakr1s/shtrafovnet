@@ -12,6 +12,8 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
+const baseUrl = "https://www.rusprofile.ru"
+
 type Server struct {
 	UnimplementedCompanyInfoGetterServer
 }
@@ -52,7 +54,7 @@ func (s *Server) GetCompanyInfo(ctx context.Context, in *GetCompanyInfoRequest) 
 }
 
 func getCompanyPageLink(inn string) (string, error) {
-	ajaxQueryUrl := fmt.Sprintf(`https://www.rusprofile.ru/ajax.php?query=%s&action=search`, inn)
+	ajaxQueryUrl := baseUrl + fmt.Sprintf(`/ajax.php?query=%s&action=search`, inn)
 	r, err := http.Get(ajaxQueryUrl)
 	if err != nil {
 		return "", err
@@ -90,7 +92,7 @@ func getCompanyPageLink(inn string) (string, error) {
 
 	for _, ul := range reply.Ul {
 		if strings.Contains(ul.Inn, inn) {
-			pageLink = "https://www.rusprofile.ru" + ul.Link
+			pageLink = baseUrl + ul.Link
 		}
 	}
 
