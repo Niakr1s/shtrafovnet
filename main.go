@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"embed"
 	"flag"
 	"fmt"
+	"io/fs"
 	"log"
 	"net"
 	"net/http"
@@ -25,8 +27,8 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
+	startSwaggerHttpServer(ctx)
 	startGrpcServer(ctx)
-	time.Sleep(time.Millisecond * 300)
 	startHttpProxy(ctx)
 
 	termChan := make(chan os.Signal, 1)
@@ -86,5 +88,36 @@ func startHttpProxy(ctx context.Context) {
 	go func() {
 		<-ctx.Done()
 		httpServer.Shutdown(context.Background())
+	}()
+}
+
+//go:embed swagger-ui
+var swaggerFS embed.FS
+
+func startSwaggerHttpServer(ctx context.Context) {
+	mux := http.NewServeMux()
+
+	swaggerFS, err := fs.Sub(swaggerFS, "swagger-ui")
+	if err != nil {
+		log.Fatalf("can't get subdirectory of swagger dist: %s", err)
+	}
+
+	mux.Handle("/", http.FileServer(http.FS(swaggerFS)))
+
+	swaggerServer := http.Server{
+		Addr:    ":8080",
+		Handler: mux,
+	}
+
+	go func() {
+		log.Printf("http server is listening on %s", swaggerServer.Addr)
+		if err := swaggerServer.ListenAndServe(); err != nil {
+			log.Fatalf("swagger server failed to server: %s", err)
+		}
+	}()
+
+	go func() {
+		<-ctx.Done()
+		swaggerServer.Shutdown(context.Background())
 	}()
 }
