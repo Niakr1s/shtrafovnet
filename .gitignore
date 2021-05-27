@@ -1,1 +1,3 @@
 buf.lock
+__debug_bin
+services/companyInfoGetter/debug.test
