@@ -27,9 +27,8 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	startSwaggerHttpServer(ctx)
 	startGrpcServer(ctx)
-	startHttpProxy(ctx)
+	startHttpServer(ctx)
 
 	termChan := make(chan os.Signal, 1)
 
@@ -65,7 +64,9 @@ func startGrpcServer(ctx context.Context) {
 	}()
 }
 
-func startHttpProxy(ctx context.Context) {
+func startHttpServer(ctx context.Context) {
+	mux := http.NewServeMux()
+
 	gwmux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithInsecure()}
 	err := companyInfoGetter.RegisterCompanyInfoGetterHandlerFromEndpoint(ctx, gwmux, fmt.Sprintf("localhost:%d", *grpcAddr), opts)
@@ -73,9 +74,12 @@ func startHttpProxy(ctx context.Context) {
 		log.Fatal(err)
 	}
 
+	mux.Handle("/swagger/", http.StripPrefix("/swagger/", swaggerHandler()))
+	mux.Handle("/", gwmux)
+
 	httpServer := http.Server{
 		Addr:    fmt.Sprintf(":%d", *httpAddr),
-		Handler: gwmux,
+		Handler: mux,
 	}
 
 	go func() {
@@ -94,30 +98,11 @@ func startHttpProxy(ctx context.Context) {
 //go:embed swagger-ui
 var swaggerFS embed.FS
 
-func startSwaggerHttpServer(ctx context.Context) {
-	mux := http.NewServeMux()
-
+func swaggerHandler() http.Handler {
 	swaggerFS, err := fs.Sub(swaggerFS, "swagger-ui")
 	if err != nil {
 		log.Fatalf("can't get subdirectory of swagger dist: %s", err)
 	}
 
-	mux.Handle("/", http.FileServer(http.FS(swaggerFS)))
-
-	swaggerServer := http.Server{
-		Addr:    ":8080",
-		Handler: mux,
-	}
-
-	go func() {
-		log.Printf("http server is listening on %s", swaggerServer.Addr)
-		if err := swaggerServer.ListenAndServe(); err != nil {
-			log.Fatalf("swagger server failed to server: %s", err)
-		}
-	}()
-
-	go func() {
-		<-ctx.Done()
-		swaggerServer.Shutdown(context.Background())
-	}()
+	return http.FileServer(http.FS(swaggerFS))
 }
