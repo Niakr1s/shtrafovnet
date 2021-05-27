@@ -2,8 +2,14 @@ syntax = 'proto3';
 
 option go_package = 'github.com/niakr1s/shtrafovnet/services/companyInfoGetter';
 
+import "google/api/annotations.proto";
+
 service CompanyInfoGetter {
-    rpc GetCompanyInfo (GetCompanyInfoRequest) returns (GetCompanyInfoResponse) {}
+    rpc GetCompanyInfo (GetCompanyInfoRequest) returns (GetCompanyInfoResponse) {
+        option (google.api.http) = {
+            get: "/v1/getCompanyInfo/{inn}"
+        };
+    }
 }
 
 message GetCompanyInfoRequest {

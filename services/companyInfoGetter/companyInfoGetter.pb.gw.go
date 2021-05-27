@@ -35,12 +35,21 @@ func request_CompanyInfoGetter_GetCompanyInfo_0(ctx context.Context, marshaler r
 	var protoReq GetCompanyInfoRequest
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["inn"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "inn")
 	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Inn, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "inn", err)
 	}
 
 	msg, err := client.GetCompanyInfo(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -52,12 +61,21 @@ func local_request_CompanyInfoGetter_GetCompanyInfo_0(ctx context.Context, marsh
 	var protoReq GetCompanyInfoRequest
 	var metadata runtime.ServerMetadata
 
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["inn"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "inn")
 	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+
+	protoReq.Inn, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "inn", err)
 	}
 
 	msg, err := server.GetCompanyInfo(ctx, &protoReq)
@@ -71,7 +89,7 @@ func local_request_CompanyInfoGetter_GetCompanyInfo_0(ctx context.Context, marsh
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterCompanyInfoGetterHandlerFromEndpoint instead.
 func RegisterCompanyInfoGetterHandlerServer(ctx context.Context, mux *runtime.ServeMux, server CompanyInfoGetterServer) error {
 
-	mux.Handle("POST", pattern_CompanyInfoGetter_GetCompanyInfo_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_CompanyInfoGetter_GetCompanyInfo_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -135,7 +153,7 @@ func RegisterCompanyInfoGetterHandler(ctx context.Context, mux *runtime.ServeMux
 // "CompanyInfoGetterClient" to call the correct interceptors.
 func RegisterCompanyInfoGetterHandlerClient(ctx context.Context, mux *runtime.ServeMux, client CompanyInfoGetterClient) error {
 
-	mux.Handle("POST", pattern_CompanyInfoGetter_GetCompanyInfo_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_CompanyInfoGetter_GetCompanyInfo_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -159,7 +177,7 @@ func RegisterCompanyInfoGetterHandlerClient(ctx context.Context, mux *runtime.Se
 }
 
 var (
-	pattern_CompanyInfoGetter_GetCompanyInfo_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"CompanyInfoGetter", "GetCompanyInfo"}, ""))
+	pattern_CompanyInfoGetter_GetCompanyInfo_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "getCompanyInfo", "inn"}, ""))
 )
 
 var (
