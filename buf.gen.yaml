@@ -14,4 +14,6 @@ plugins:
       - paths=source_relative
       - generate_unbound_methods=true
   - name: openapiv2
-    out: gen/openapiv2
+    out: swagger-ui
+    opt:
+      - allow_merge=true
