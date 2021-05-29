@@ -26,18 +26,20 @@ func NewServer() *Server {
 }
 
 func (s *Server) GetCompanyInfo(ctx context.Context, in *GetCompanyInfoRequest) (*GetCompanyInfoResponse, error) {
+	log.Printf("GetCompanyInfo: got request: %+v", in)
+
 	urlStr, err := getCompanyPageLink(in.Inn)
 	if err != nil {
+		log.Printf("GetCompanyInfo: fail, request: %+v, err: %v", in, err)
 		if err == errInnNotFound {
 			return nil, status.Error(codes.NotFound, err.Error())
 		}
 		return nil, err
 	}
 
-	log.Printf("trying to visit url %s", urlStr)
-
 	r, err := http.Get(urlStr)
 	if err != nil {
+		log.Printf("GetCompanyInfo: fail, request: %+v, err: %v", in, err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -46,17 +48,19 @@ func (s *Server) GetCompanyInfo(ctx context.Context, in *GetCompanyInfoRequest) 
 
 	info, err := parseCompanyInfoPage(body)
 	if err != nil {
+		log.Printf("GetCompanyInfo: fail, request: %+v, err: %v", in, err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	response := GetCompanyInfoResponse{
+	response := &GetCompanyInfoResponse{
 		Inn:   info.Inn,
 		Kpp:   info.Kpp,
 		Name:  info.Name,
 		Chief: info.Chief,
 	}
+	log.Printf("GetCompanyInfo: success, request: %+v, response: %v", in, response)
 
-	return &response, nil
+	return response, nil
 }
 
 var errInnNotFound = errors.New("inn not found")
@@ -90,8 +94,6 @@ func getCompanyPageLink(inn string) (string, error) {
 	if err := json.Unmarshal(body, &reply); err != nil {
 		return "", err
 	}
-
-	log.Println(reply)
 
 	if !reply.Success {
 		return "", fmt.Errorf("unsuccesfull query: code = %d, message = %s", reply.Code, reply.Message)
