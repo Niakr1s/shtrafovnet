@@ -3,6 +3,7 @@ package companyInfoGetter
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -10,6 +11,8 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const baseUrl = "https://www.rusprofile.ru"
@@ -25,6 +28,9 @@ func NewServer() *Server {
 func (s *Server) GetCompanyInfo(ctx context.Context, in *GetCompanyInfoRequest) (*GetCompanyInfoResponse, error) {
 	urlStr, err := getCompanyPageLink(in.Inn)
 	if err != nil {
+		if err == errInnNotFound {
+			return nil, status.Error(codes.NotFound, err.Error())
+		}
 		return nil, err
 	}
 
@@ -32,7 +38,7 @@ func (s *Server) GetCompanyInfo(ctx context.Context, in *GetCompanyInfoRequest) 
 
 	r, err := http.Get(urlStr)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	body := r.Body
@@ -40,7 +46,7 @@ func (s *Server) GetCompanyInfo(ctx context.Context, in *GetCompanyInfoRequest) 
 
 	info, err := parseCompanyInfoPage(body)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	response := GetCompanyInfoResponse{
@@ -53,6 +59,9 @@ func (s *Server) GetCompanyInfo(ctx context.Context, in *GetCompanyInfoRequest) 
 	return &response, nil
 }
 
+var errInnNotFound = errors.New("inn not found")
+
+// getCompanyPageLink returns errInnNotFound if company with such inn wasn't found
 func getCompanyPageLink(inn string) (string, error) {
 	ajaxQueryUrl := baseUrl + fmt.Sprintf(`/ajax.php?query=%s&action=search`, inn)
 	r, err := http.Get(ajaxQueryUrl)
@@ -97,7 +106,7 @@ func getCompanyPageLink(inn string) (string, error) {
 	}
 
 	if pageLink == "" {
-		return "", fmt.Errorf("no company with inn = %s found", inn)
+		return "", errInnNotFound
 	}
 
 	return pageLink, nil
